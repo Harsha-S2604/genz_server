@@ -9,9 +9,7 @@ import (
 func TestDBInitialization(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	db := ConnectDB()
-	if db != nil {
-		t.Logf("Mongo DB Connection Success")
-	} else {
+	if db == nil {
 		t.Fail()
 	}
 }
