@@ -19,7 +19,7 @@ func ConnectDB() *mongo.Database {
 	databaseName := os.Getenv("DB_NAME")
 	ginMode := gin.Mode()
 	var mongoDBUrl string
-	if ginMode == "debug" {
+	if ginMode == "debug" || ginMode == "test" {
 		mongoDBUrl = "mongodb+srv://"+username+":"+password+"@cluster0.qq6u4.mongodb.net/"+databaseName+"?retryWrites=true&w=majority"
 	}
 
