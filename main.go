@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os"
 
 	"genz_server/routes"
 	"genz_server/config/db"
@@ -14,6 +15,7 @@ func main() {
 	*/
 	database := db.ConnectDB()
 	r := routes.SetupRouter(database)
-	r.Run(":8081")
+	port := os.Getenv("PORT")
+	r.Run(":"+port)
 	
 }
