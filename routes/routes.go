@@ -15,12 +15,14 @@ func SetupRouter(db *mongo.Database) *gin.Engine {
 
 	userAPIRouter := router.Group("api/v1/users")
 	{
+
+		userAPIRouter.GET("/user/:id", userservice.GetUserByIdHandler(db))
+
 		userAPIRouter.POST("/register", userservice.AddUserHandler(db))
 
 		userAPIRouter.POST("/login", userservice.UserLoginHandler(db))
 
-		userAPIRouter.GET("/user/:id", userservice.GetUserByIdHandler(db))
-
+		userAPIRouter.PUT("/change/password/:id", userservice.UpdatePasswdHandler(db))
 	}
 
 	return router

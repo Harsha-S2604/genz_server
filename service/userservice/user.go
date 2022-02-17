@@ -128,6 +128,13 @@ func GetUserByIdHandler(db *mongo.Database) gin.HandlerFunc {
 
 	getUserById := func (ctx *gin.Context) {
 		userIdStr := ctx.Params.ByName("id")
+		if userIdStr == "" {
+			ctx.JSON(http.StatusBadRequest, gin.H{
+				"success": false,
+				"message": "user id is required",
+			})
+			return
+		}
 		objectId, objectIdErr := primitive.ObjectIDFromHex(userIdStr)
 		if objectIdErr != nil{
 			ctx.JSON(http.StatusBadRequest, gin.H{
@@ -154,4 +161,89 @@ func GetUserByIdHandler(db *mongo.Database) gin.HandlerFunc {
 		})
 	}
 	return gin.HandlerFunc(getUserById)
+}
+
+func UpdatePasswdHandler(db *mongo.Database) gin.HandlerFunc {
+
+	updatePasswd := func(ctx *gin.Context) {
+		userIdStr := ctx.Params.ByName("id")
+		if userIdStr == "" {
+			ctx.JSON(http.StatusBadRequest, gin.H{
+				"success": false,
+				"message": "user id is required",
+			})
+			return
+		}
+
+		objectId, objectIdErr := primitive.ObjectIDFromHex(userIdStr)
+		if objectIdErr != nil{
+			ctx.JSON(http.StatusBadRequest, gin.H{
+				"success": false,
+				"message": "invaid id",
+			})
+			return
+		}
+
+		var userFromDB models.Users
+		_ = db.Collection("users").FindOne(context.TODO(), bson.M{"_id": objectId}).Decode(&userFromDB)
+		if userFromDB.Email == "" {
+			ctx.JSON(http.StatusNotFound, gin.H{
+				"success": false,
+				"message": "user not found",
+			})
+			return
+		}
+
+		var userObj models.UserPasswordChange
+		ctx.ShouldBindJSON(&userObj)
+		isValidUserData, msg := validations.ValidateUserData(userFromDB.Email, userObj.NewPassword)
+		if !isValidUserData {
+			ctx.JSON(http.StatusBadRequest, gin.H{
+				"success": false,
+				"message": msg,
+			})
+			return
+		}
+
+		
+		hashedPassword := hashing.HashUserPassword(userObj.OldPassword)
+		if hashedPassword != userFromDB.Password {
+			ctx.JSON(http.StatusUnauthorized, gin.H{
+				"success": false,
+				"message": "invalid old password",
+			})
+			return
+		}
+
+		hashedNewPassword := hashing.HashUserPassword(userObj.NewPassword)
+		updateResult, updateErr := db.Collection("users").UpdateOne(
+			context.TODO(), bson.M{"_id": objectId},
+			bson.D{
+				{"$set", bson.D{{"password", hashedNewPassword}}},
+			},
+		)
+
+		if updateErr != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"success": false,
+				"message": "Sorry, something went wrong. Please try again later.",
+			})
+			return
+		}
+
+		if !(updateResult.ModifiedCount > 0) {
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"success": false,
+				"message": "Sorry, something went wrong. Please try again later.",
+			})
+			return
+		}
+
+		ctx.JSON(http.StatusOK, gin.H{
+			"success": true,
+			"message": "Password updated successfully.",
+		})
+	}
+
+	return gin.HandlerFunc(updatePasswd)
 }
