@@ -3,6 +3,7 @@ package db
 import (
 	"os"
 	"context"
+	"log"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -16,6 +17,7 @@ func ConnectDB() *mongo.Database {
 	if username == "" || password == "" {
 		panic("username or password is required")
 	}
+	log.Println(username)
 	databaseName := os.Getenv("DB_NAME")
 	ginMode := gin.Mode()
 	var mongoDBUrl string
