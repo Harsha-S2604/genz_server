@@ -4,6 +4,7 @@ import (
 	"os"
 	"context"
 
+	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -15,11 +16,14 @@ func ConnectDB() *mongo.Database {
 	if username == "" || password == "" {
 		panic("username or password is required")
 	}
+	databaseName := os.Getenv("DB_NAME")
+	ginMode := gin.Mode()
+	var mongoDBUrl string
+	if ginMode == "debug" {
+		mongoDBUrl = "mongodb+srv://"+username+":"+password+"@cluster0.qq6u4.mongodb.net/"+databaseName+"?retryWrites=true&w=majority"
+	}
 
-	clientOptions := options.Client().ApplyURI("mongodb://localhost:27017/").SetAuth(options.Credential{
-		Username: username,
-		Password: password,
-	})
+	clientOptions := options.Client().ApplyURI(mongoDBUrl)
 
 	client, dbErr := mongo.Connect(ctx, clientOptions)
 	if dbErr != nil {
@@ -31,7 +35,6 @@ func ConnectDB() *mongo.Database {
 		panic("Failed to connect to database " + dbErr.Error())
 	}
 
-	databaseName := os.Getenv("DB_NAME")
 	if databaseName == "" {
 		panic("Please provide the database name")
 	}
