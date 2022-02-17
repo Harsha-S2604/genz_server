@@ -111,3 +111,45 @@ func TestGetUserById(t *testing.T) {
 		t.Errorf("Expected code %d but got %d", expected, actual)
 	}
 }
+
+func TestUpdatePassword(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	jsonData, err := json.Marshal(map[string]interface{}{
+		"old_password": "Test@123",
+		"new_password": "Test@456",
+	})
+
+	if err != nil {
+		t.Fail()
+	}
+
+	database := db.ConnectDB()
+	req, err := http.NewRequest(http.MethodPut, "api/v1/users/change/password/:id", bytes.NewBuffer(jsonData))
+	if err != nil {
+		t.Fail()
+	}
+
+	req.Header.Set("Content-type", "application/json")
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Params = []gin.Param{
+		{
+			Key: "id",
+			Value: "620e7780665f45729159d720", // change the user id you want
+		},
+	}
+	c.Request = req
+	updatePassword := UpdatePasswdHandler(database)
+	updatePassword(c)
+	bodySb, err := ioutil.ReadAll(w.Body)
+	var decodedResponse interface{}
+	err = json.Unmarshal(bodySb, &decodedResponse)
+	if err != nil {
+		t.Fatalf("Cannot decode response <%p> from server. Err: %v", bodySb, err)
+	}
+
+	expected, actual := 200, w.Code
+	if expected != actual {
+		t.Errorf("Expected code %d but got %d", expected, actual)
+	}
+}
